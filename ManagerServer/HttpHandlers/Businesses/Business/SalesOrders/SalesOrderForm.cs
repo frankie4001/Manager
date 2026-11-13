@@ -24,6 +24,13 @@ namespace ManagerServer.HttpHandlers.Businesses.Business.SalesOrders
 
         protected override bool CanHaveImage() => true;
 
+        // Calculatie (inkoopkosten, extra kosten, opslag) boven het orderformulier; zie OrderCalculatie.cs
+        protected override void InnerGet5()
+        {
+            if (!ConfirmDelete) Write(OrderCalculatie.Render(Business, Key));
+            if (!ConfirmDelete) Write(Contactpersonen.RenderFormulier(Business));
+        }
+
         protected override void OnSource(SalesOrder form, ManagerServer.Model.Object source)
         {
             if (!Key.HasValue)

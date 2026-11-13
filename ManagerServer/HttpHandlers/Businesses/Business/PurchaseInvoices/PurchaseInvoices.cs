@@ -28,6 +28,14 @@ namespace ManagerServer.HttpHandlers.Businesses.Business.PurchaseInvoices
         [ProtoMember(1)] public Guid? Supplier;
         [ProtoMember(2)] public Guid? PurchaseOrder;
 
+        // Knop naar de betaallijst (zie Betaallijst.cs)
+        protected override void OnHeaderStartSection(Context context)
+        {
+            base.OnHeaderStartSection(context);
+            if (GetType() == typeof(PurchaseInvoices))
+                using (A(@class: "btn", href: new Betaallijst() { Business = Business, Referrer = this.ToUrl() }.ToUrl())) Write("Betaallijst");
+        }
+
         protected override PurchaseInvoice[] OnGetRows(PurchaseInvoice[] rows)
         {
             if (Supplier.HasValue) rows = rows.Where(x => x.Supplier == Supplier.Value).ToArray();

@@ -24,6 +24,34 @@ namespace ManagerServer.HttpHandlers.Businesses.Business
             ProcessQueueLoop(queue);
         }
 
+        // A plain on/off option (checkbox), e.g. "Rounding" or "Hide due date" on an invoice.
+        private static bool IsOptionCheckbox(MemberInfo field)
+        {
+            return field.GetMemberType() == typeof(bool)
+                && field.GetCustomAttribute<IconAttribute>() == null
+                && field.GetCustomAttribute<TabSwitchAttribute>() == null
+                && field.GetCustomAttribute<FieldsetAttribute>() == null;
+        }
+
+        // Number of option checkboxes at the front of the queue, skipping hidden fields
+        // and the fields that belong to an option (IfTrue).
+        private int CountLeadingOptionCheckboxes(Queue<MemberInfo> queue)
+        {
+            var fields = queue.ToArray();
+            var count = 0;
+            var i = 0;
+            while (i < fields.Length)
+            {
+                var field = fields[i];
+                if (!IsVisible(field)) { i++; continue; }
+                if (!IsOptionCheckbox(field)) break;
+                count++;
+                i++;
+                while (i < fields.Length && fields[i].GetCustomAttribute<IfTrueAttribute>()?.Path[0] == field.Name) i++;
+            }
+            return count;
+        }
+
         private void ProcessQueueLoop(Queue<MemberInfo> queue)
         {
             while (queue.Any())
@@ -32,6 +60,32 @@ namespace ManagerServer.HttpHandlers.Businesses.Business
                 if (!IsVisible(nextField))
                 {
                     queue.Dequeue();
+                    continue;
+                }
+
+                // Group consecutive option checkboxes in a block that can be collapsed.
+                // The open/closed state is remembered per form type in the browser
+                // (see resources/select2vue/select2vue.js).
+                if (IsOptionCheckbox(nextField) && CountLeadingOptionCheckboxes(queue) >= 2)
+                {
+                    var optionsKey = System.Net.WebUtility.HtmlEncode(typeof(T).FullName);
+                    Write($"<details class=\"form-options my-2\" data-options-key=\"{optionsKey}\" open>");
+                    Write($"<summary class=\"cursor-pointer select-none font-bold py-1\">{System.Net.WebUtility.HtmlEncode(Strings.Options)}</summary>");
+                    while (queue.Any())
+                    {
+                        var optionField = queue.Peek();
+                        if (!IsVisible(optionField))
+                        {
+                            queue.Dequeue();
+                            continue;
+                        }
+                        if (!IsOptionCheckbox(optionField) || optionField.GetCustomAttribute<FieldsetAttribute>() != null) break;
+
+                        var optionIf = $"getIf{optionField.Name}()";
+                        if (!optionField.GetCustomAttributes<IfAttribute>().Any()) optionIf = null;
+                        using (Div(v_if: optionIf)) ProcessQueue(queue);
+                    }
+                    Write("</details>");
                     continue;
                 }
 
@@ -875,7 +929,7 @@ namespace ManagerServer.HttpHandlers.Businesses.Business
                         {
                             using (Button(@class: "form-control me-1 cursor-pointer", title: "Copy", v_on_click: $"{field.Name}.splice(index, 0, JSON.parse(JSON.stringify({field.Name}[index])))"))
                             {
-                                I(@class: "fas fa-table-rows opacity-50");
+                                I(@class: "fas fa-clone opacity-50");
                             }
                         }
                         using (Div(@class: "flex items-center"))
@@ -1819,7 +1873,9 @@ namespace ManagerServer.HttpHandlers.Businesses.Business
                     if (autocompleteAttribute.Value == typeof(ManagerServer.Model.SalesQuote)) return ApplicationData.Businesses.Get(Business).OfType<ManagerServer.Model.SalesQuote>().Any();
                     if (autocompleteAttribute.Value == typeof(ManagerServer.Model.TaxCode)) return ApplicationData.Businesses.Get(Business).OfType<ManagerServer.Model.TaxCode>().Any();
                     if (autocompleteAttribute.Value == typeof(ManagerServer.Model.Division)) return ApplicationData.Businesses.Get(Business).OfType<ManagerServer.Model.Division>().Any();
-                    if (autocompleteAttribute.Value == typeof(ManagerServer.Model.Project)) return ApplicationData.Businesses.Get(Business).OfType<ManagerServer.Model.Project>().Any();
+                    // Hide project fields while the Projects tab is switched off. Existing project
+                    // values are kept: the whole object is still sent to the form and saved back.
+                    if (autocompleteAttribute.Value == typeof(ManagerServer.Model.Project)) return ApplicationData.Businesses.Get(Business).Single<ManagerServer.Model.Tabs>().Projects && ApplicationData.Businesses.Get(Business).OfType<ManagerServer.Model.Project>().Any();
                     if (autocompleteAttribute.Value == typeof(ManagerServer.Model.CustomInventoryLocation)) return ApplicationData.Businesses.Get(Business).OfType<ManagerServer.Model.CustomInventoryLocation>().Any();                    
                     if (autocompleteAttribute.Value == typeof(ManagerServer.Model.CashFlowStatementFinancingActivityGroup)) return ApplicationData.Businesses.Get(Business).OfType<ManagerServer.Model.CashFlowStatementFinancingActivityGroup>().Any();
                     if (autocompleteAttribute.Value == typeof(ManagerServer.Model.CashFlowStatementInvestingActivityGroup)) return ApplicationData.Businesses.Get(Business).OfType<ManagerServer.Model.CashFlowStatementInvestingActivityGroup>().Any();

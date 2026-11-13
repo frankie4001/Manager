@@ -1,0 +1,58 @@
+/* Calculatie op de verkooporder (Eigen aanpassing) */
+.oc {
+  --oc-rand: #d4d4d4;
+  --oc-zacht: #737373;
+  --oc-blauw: #2563eb;
+  border: 1px solid var(--oc-rand);
+  border-radius: 0.75rem;
+  background: #fff;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+.oc-kop { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; padding: 0.75rem 1rem; cursor: pointer; user-select: none; }
+.oc-kop::-webkit-details-marker { display: none; }
+.oc-kop::before { content: "▸"; color: var(--oc-zacht); transition: transform 0.15s; display: inline-block; }
+.oc[open] > .oc-kop::before { transform: rotate(90deg); }
+.oc-titel { font-weight: 700; }
+.oc-samenvatting { color: #404040; font-variant-numeric: tabular-nums; }
+.oc-inhoud { border-top: 1px solid var(--oc-rand); padding: 0.75rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.oc-sectie { font-weight: 700; margin-top: 0.5rem; display: flex; align-items: baseline; gap: 0.25rem; }
+.oc-zacht { color: var(--oc-zacht); }
+.oc-klein { font-size: 0.8125rem; font-weight: 400; }
+.oc-rood { color: #b91c1c; }
+.oc-groen { color: #15803d; }
+.oc-melding { border-radius: 0.5rem; padding: 0.5rem 0.75rem; border: 1px solid #e5e5e5; }
+.oc-let { background: #fefce8; border-color: #fde68a; color: #a16207; }
+.oc-fout { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.oc-tabelvak { overflow-x: auto; }
+.oc-tabel { border-collapse: collapse; width: 100%; }
+.oc-tabel th { text-align: left; font-weight: 600; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--oc-rand); }
+.oc-tabel td { padding: 0.25rem 0.5rem; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.oc-tabel tfoot td { border-bottom: 0; font-weight: 600; }
+.oc-tabel .oc-num, .oc-tabel th.oc-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.oc-nowrap { white-space: nowrap; }
+.oc-uit td { color: #a3a3a3; text-decoration: line-through; }
+.oc-uit td:first-child { text-decoration: none; }
+.oc-invoer { border: 1px solid var(--oc-rand); border-radius: 0.375rem; padding: 0.25rem 0.5rem; font: inherit; background: #fff; }
+.oc-breed { width: 100%; min-width: 12rem; }
+.oc-getal { width: 6rem; text-align: right; }
+.oc-knop { border: 1px solid var(--oc-rand); border-radius: 0.5rem; padding: 0.25rem 0.75rem; background: #fff; cursor: pointer; font-weight: 500; white-space: nowrap; }
+.oc-knop:hover { background: #f5f5f5; }
+.oc-link { background: none; border: 0; padding: 0; margin-left: 0.5rem; color: var(--oc-blauw); cursor: pointer; font-weight: 400; font-size: 0.8125rem; }
+.oc-weg { border: 0; background: none; color: #b91c1c; cursor: pointer; font-size: 1.1rem; line-height: 1; }
+.oc-totaal { margin-top: 0.75rem; border-top: 2px solid #e5e5e5; padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.375rem; max-width: 36rem; margin-left: auto; width: 100%; }
+.oc-totaal > div { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.oc-groot { font-size: 1.125rem; }
+.oc a { color: var(--oc-blauw); }
+.oc-factuur td { font-weight: 500; }
+.oc-detail td { font-size: 0.8125rem; color: #525252; background: #fafafa; }
+.oc-link-los { margin-left: 0; }
+.oc-orders { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; }
+.oc-chip { display: inline-flex; align-items: center; gap: 0.125rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 999px; padding: 0 0.25rem 0 0.625rem; font-variant-numeric: tabular-nums; }
+.oc-keuze { max-width: 20rem; }
+.oc-suggestie { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; color: #a16207; font-size: 0.8125rem; }
+.oc-order { margin-left: 0.5rem; font-size: 0.75rem; color: #1e40af; background: #eff6ff; border-radius: 0.25rem; padding: 0 0.25rem; }
+.oc-info { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+.oc-sub td { color: #525252; background: #fafafa; }
+.oc-sub .oc-order { margin-left: 0; }
+.oc-rechts { text-align: right; }

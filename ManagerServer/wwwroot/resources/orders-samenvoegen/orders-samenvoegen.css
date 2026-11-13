@@ -1,0 +1,47 @@
+/* Verkooporders samenvoegen (Eigen aanpassing) */
+.os, .os-overlay { font-size: 0.875rem; --os-rand: #d4d4d4; --os-blauw: #2563eb; }
+.os { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.os-zacht { color: #737373; }
+.os-rood { color: #b91c1c; }
+.os-klein { font-size: 0.8125rem; }
+.os-ruimte { flex: 1; }
+.os-nowrap { white-space: nowrap; }
+.os-balk { display: flex; flex-wrap: wrap; gap: 0.625rem; align-items: center; }
+.os-invoer { border: 1px solid var(--os-rand); border-radius: 0.375rem; padding: 0.3rem 0.5rem; font: inherit; background: #fff; }
+.os-breed { width: 100%; }
+.os-knop { border: 1px solid var(--os-rand); border-radius: 0.5rem; padding: 0.375rem 0.875rem; background: #fff; cursor: pointer; font-weight: 500; white-space: nowrap; }
+.os-knop:hover { background: #f5f5f5; }
+.os-knop:disabled { opacity: 0.5; cursor: default; }
+.os-primair { background: var(--os-blauw); border-color: var(--os-blauw); color: #fff; }
+.os-primair:hover { background: #1d4ed8; }
+.os-melding { border-radius: 0.5rem; padding: 0.5rem 0.75rem; border: 1px solid; display: flex; gap: 0.5rem; align-items: center; }
+.os-ok { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.os-fout { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.os-sluit { margin-left: auto; border: 0; background: none; cursor: pointer; font-size: 1.1rem; color: inherit; }
+.os-kop { font-weight: 700; padding: 0.375rem 0; }
+.os-groep { border: 1px solid #e5e5e5; border-radius: 0.5rem; margin-bottom: 0.375rem; overflow: hidden; }
+.os-groep > summary { cursor: pointer; padding: 0.5rem 0.75rem; font-weight: 600; background: #fafafa; }
+.os-tabel { border-collapse: collapse; width: 100%; }
+.os-tabel th { text-align: left; font-weight: 600; color: #525252; padding: 0.3rem 0.625rem; border-bottom: 1px solid var(--os-rand); }
+.os-tabel td { padding: 0.3rem 0.625rem; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+.os-tabel tfoot td { font-weight: 600; border-bottom: 0; }
+.os-num { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.os-is-doel td { background: #eff6ff; }
+.os a { color: var(--os-blauw); }
+.os-blok { margin-top: 0.75rem; }
+.os-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.os-dialoog { background: #fff; border-radius: 0.75rem; width: min(52rem, 100%); max-height: 100%; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25); }
+.os-dialoog-kop { padding: 0.75rem 1rem; border-bottom: 1px solid #e5e5e5; }
+.os-dialoog-inhoud { padding: 1rem; overflow: auto; display: flex; flex-direction: column; gap: 0.75rem; }
+.os-dialoog-voet { padding: 0.75rem 1rem; border-top: 1px solid #e5e5e5; display: flex; justify-content: flex-end; gap: 0.5rem; }
+.os-raster { display: grid; grid-template-columns: 10rem 1fr; gap: 0.5rem 0.75rem; align-items: center; }
+.os-scroll { max-height: 45vh; overflow: auto; border: 1px solid #e5e5e5; border-radius: 0.375rem; }
+.os-overlay a { color: var(--os-blauw); }
+@media (max-width: 640px) { .os-raster { grid-template-columns: 1fr; } }
+.os-groep > summary { display: flex; align-items: center; gap: 0.25rem; }
+.os-acties { margin-left: auto; display: flex; gap: 0.375rem; font-weight: 400; }
+.os-acties .os-knop { padding: 0.125rem 0.625rem; }
+.os-sorteer { cursor: pointer; user-select: none; }
+.os-sorteer:hover { color: #000; }
+.os-uit td { color: #a3a3a3; }
+.os-invul { min-width: 10rem; border-left: 1px solid #e5e5e5; }

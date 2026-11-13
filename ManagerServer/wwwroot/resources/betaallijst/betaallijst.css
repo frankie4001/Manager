@@ -1,0 +1,24 @@
+/* Betaallijst (Eigen aanpassing); bouwt voort op orders-samenvoegen.css */
+.bl-tegels { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.625rem; }
+.bl-tegel { background: #f5f8fa; border-left: 3px solid #2563eb; border-radius: 0.375rem; padding: 0.5rem 0.875rem; }
+.bl-tegel.bl-rood { border-left-color: #b91c1c; }
+.bl-tegel.bl-rood .bl-waarde { color: #b91c1c; }
+.bl-tegel.bl-blauw { background: #eff6ff; }
+.bl-label { font-size: 0.75rem; color: #737373; }
+.bl-waarde { font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bl-sub { font-size: 0.75rem; color: #737373; }
+.bl-inline { display: inline-flex; align-items: center; gap: 0.375rem; color: #525252; }
+.bl-scroll { max-height: none; }
+.bl-tabel td { white-space: nowrap; }
+.bl-tabel td.bl-wrap { white-space: normal; min-width: 10rem; max-width: 22rem; }
+.bl-laat { color: #b91c1c; font-weight: 600; }
+.bl-dagen { display: block; font-size: 0.6875rem; color: #737373; font-weight: 400; }
+.bl-laat .bl-dagen { color: #b91c1c; }
+.bl-cursief { font-style: italic; }
+.bl-sel td { background: #eff6ff; }
+.bl-betaald td { opacity: 0.55; }
+.bl-label-betaald { margin-left: 0.375rem; font-size: 0.6875rem; color: #15803d; font-weight: 600; }
+.bl-tabel tfoot td { border-top: 2px solid #2563eb; background: #f5f8fa; }
+.bl-kopieer { user-select: all; font-variant-numeric: tabular-nums; }
+.bl-knopje { border: 0; background: none; cursor: pointer; color: #737373; padding: 0 0.25rem; text-decoration: none; }
+.bl-knopje:hover { color: #2563eb; }

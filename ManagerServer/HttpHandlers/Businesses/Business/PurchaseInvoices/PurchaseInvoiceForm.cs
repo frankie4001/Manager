@@ -22,6 +22,17 @@ namespace ManagerServer.HttpHandlers.Businesses.Business.PurchaseInvoices
 
         protected override bool CanHaveImage() => true;
 
+        // PDF-inkoopfactuur inlezen (zie PdfImport.cs): knop boven een nieuwe inkoopfactuur
+        protected override void InnerGet5()
+        {
+            if (!Key.HasValue && !ConfirmDelete) Write(PdfImport.Render(Business));
+        }
+
+        protected override System.Threading.Tasks.Task OnSaved(ManagerServer.Model.PurchaseInvoice o, Microsoft.AspNetCore.Http.IFormCollection form)
+        {
+            return PdfImport.OnSavedAsync(ApplicationData, Business, GetUserName(), o, form);
+        }
+
         protected override void OnSource(ManagerServer.Model.PurchaseInvoice form, ManagerServer.Model.Object source)
         {
             if (!Key.HasValue)

@@ -39,11 +39,11 @@ namespace ManagerServer.Api.Businesses.Business.SalesInvoices
 
             var salesQuote = Database.SingleOrDefault<Model.SalesQuote>(o.SalesQuote);
             if (salesQuote != null) viewData.fields.Add(new TransactionView.Field { key = nameof(Strings.QuoteNumber), label = GetBilingualString(o.Bilingual, nameof(Strings.QuoteNumber), "Quote number"), text = salesQuote.GetName() });
-            else if (!string.IsNullOrWhiteSpace(o.QuoteNumber)) viewData.fields.Add(new TransactionView.Field { label = GetBilingualString(o.Bilingual, nameof(Strings.QuoteNumber), "Quote number"), text = o.QuoteNumber });
+            else if (!string.IsNullOrWhiteSpace(o.QuoteNumber)) viewData.fields.Add(new TransactionView.Field { key = nameof(Strings.QuoteNumber), label = GetBilingualString(o.Bilingual, nameof(Strings.QuoteNumber), "Quote number"), text = o.QuoteNumber });
 
             var salesOrder = Database.SingleOrDefault<Model.SalesOrder>(o.SalesOrder);
             if (salesOrder != null) viewData.fields.Add(new TransactionView.Field { key = nameof(Strings.OrderNumber), label = GetBilingualString(o.Bilingual, nameof(Strings.OrderNumber), "Order number"), text = salesOrder.GetName() });
-            else if (!string.IsNullOrWhiteSpace(o.OrderNumber)) viewData.fields.Add(new TransactionView.Field { label = GetBilingualString(o.Bilingual, nameof(Strings.OrderNumber), "Order number"), text = o.OrderNumber });
+            else if (!string.IsNullOrWhiteSpace(o.OrderNumber)) viewData.fields.Add(new TransactionView.Field { key = nameof(Strings.OrderNumber), label = GetBilingualString(o.Bilingual, nameof(Strings.OrderNumber), "Order number"), text = o.OrderNumber });
 
             var currencies = Query.Currencies.GetCurrencyProvider(Business);
             Guid? currency = null;

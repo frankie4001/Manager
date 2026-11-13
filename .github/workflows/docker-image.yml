@@ -1,0 +1,42 @@
+# Bouwt bij elke push naar de branch met de aanpassingen een Docker-image en zet het op
+# GitHub Container Registry (ghcr.io/<eigenaar>/<repository>). Zo hoeft een server niet zelf te bouwen.
+name: Docker-image
+
+on:
+  push:
+    branches: [aanpassingen]
+    paths-ignore: ["**.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Versie en naam bepalen
+        id: versie
+        run: |
+          echo "versie=26.11.5.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          # image heet zoals de repository (in kleine letters): .../manager of .../manager-prive
+          echo "image=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          build-args: MANAGER_VERSION=${{ steps.versie.outputs.versie }}
+          tags: |
+            ${{ steps.versie.outputs.image }}:latest
+            ${{ steps.versie.outputs.image }}:${{ steps.versie.outputs.versie }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

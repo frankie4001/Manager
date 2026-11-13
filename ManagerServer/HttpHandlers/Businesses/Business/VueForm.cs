@@ -32,6 +32,12 @@ namespace ManagerServer.HttpHandlers.Businesses.Business
         
         protected virtual void InnerGet4() { }
 
+        // Extra output after the form and its scripts (used by the PDF import on purchase invoices).
+        protected virtual void InnerGet5() { }
+
+        // Called after the object has been saved from the form.
+        protected virtual Task OnSaved(T o, IFormCollection form) => Task.CompletedTask;
+
         protected virtual bool CanHaveImage() => false;
 
         protected virtual void OnSource(T form, ManagerServer.Model.Object source) { }        
@@ -645,6 +651,8 @@ function postContentAndReturnDecimal(owner, url, setterFunction) {
 }
 ");
             }
+
+            InnerGet5();
         }
 
         public override async Task Put()
@@ -890,6 +898,8 @@ function postContentAndReturnDecimal(owner, url, setterFunction) {
             {
                 ApplicationData.Businesses.DeleteImage(Business, o.Key);
             }
+
+            await OnSaved(o, form);
 
             if (form[nameof(Strings.CreateAndAddAnother)] == "true")
             {

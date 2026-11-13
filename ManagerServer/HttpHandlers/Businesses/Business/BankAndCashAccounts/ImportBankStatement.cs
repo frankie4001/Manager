@@ -147,7 +147,7 @@ namespace ManagerServer.HttpHandlers.Businesses.Business.BankAndCashAccounts
 
                             using (Div(@class: "form-group"))
                             {
-                                var extensions = new string[] { "qif", "ofx", "qfx", "qbo", "sta", "swi", "940", "iif", "csv", "camt053", "camt052", "xml" };
+                                var extensions = new string[] { "qif", "ofx", "qfx", "qbo", "sta", "swi", "940", "iif", "csv", "camt053", "camt052", "xml", "txt" };
 
                                 using (Label()) Write(Strings.SelectFileFromYourComputer);
                                 using (Div()) InputFile(accept: string.Join(",", extensions.Select(x => '.' + x).ToArray()), name: "File", @class: "form-file");
@@ -441,8 +441,73 @@ namespace ManagerServer.HttpHandlers.Businesses.Business.BankAndCashAccounts
             }
         }
 
+        // Eigen aanpassing: sommige banken slaan een MT940-afschrift op als .txt. Bij een .txt-bestand
+        // (of een onbekende extensie) wordt het formaat aan de inhoud herkend.
+        internal static string FileNameByContent(string fileName, byte[] buffer)
+        {
+            var lower = (fileName ?? string.Empty).ToLowerInvariant();
+            var known = new[] { ".qif", ".ofx", ".qfx", ".qbo", ".sta", ".swi", ".940", ".iif", ".csv", ".camt053", ".camt052", ".xml" };
+            if (known.Any(x => lower.EndsWith(x)) || buffer == null) return fileName;
+            var text = System.Text.Encoding.UTF8.GetString(buffer, 0, Math.Min(buffer.Length, 64 * 1024));
+            if (Regex.IsMatch(text, @"^:20:", RegexOptions.Multiline) && Regex.IsMatch(text, @"^:(25|60F|60M):", RegexOptions.Multiline) && Regex.IsMatch(text, @"^:(61|62F|62M):", RegexOptions.Multiline))
+                return fileName + ".940";
+            if (text.Contains("OFXHEADER", StringComparison.OrdinalIgnoreCase) || text.Contains("<OFX>", StringComparison.OrdinalIgnoreCase)) return fileName + ".ofx";
+            if (Regex.IsMatch(text, @"^!Type:", RegexOptions.Multiline | RegexOptions.IgnoreCase)) return fileName + ".qif";
+            if (Regex.IsMatch(text, @"urn:iso:std:iso:20022:tech:xsd:camt\.05[23]", RegexOptions.IgnoreCase)) return fileName + ".xml";
+            if (lower.EndsWith(".txt") && (text.Contains(';') || text.Contains(','))) return fileName + ".csv";
+            return fileName;
+        }
+
+        // Eigen aanpassing: MT940-omschrijving leesbaar maken.
+        // Gestructureerde SEPA-informatie (/TRTP/.../NAME/.../REMI/...) wordt "naam - omschrijving - IBAN (soort)";
+        // regels in :86: worden zonder spatie aan elkaar gezet (de bank breekt ze midden in woorden af).
+        private static readonly string[] Mt940Tags = { "TRTP", "IBAN", "BIC", "NAME", "EREF", "REMI", "MARF", "CSID", "ORDP", "BENM", "ADDR", "CDTRREF", "CDTRREFTP", "PURP", "RTRN", "SVCL", "ULTC", "ULTD", "ISDT", "CNTP", "PREF", "ISSUER", "CREF", "RTYP", "CHGS" };
+
+        internal static string Mt940Omschrijving(string description, string reference)
+        {
+            var tekst = description ?? string.Empty;
+            reference = (reference ?? string.Empty).Trim();
+            if (string.Equals(reference, "NOTPROVIDED", StringComparison.OrdinalIgnoreCase)) reference = string.Empty;
+            if (!Regex.IsMatch(tekst.TrimStart(), @"^/(TRTP|IBAN|NAME|REMI|EREF|CNTP)/", RegexOptions.IgnoreCase))
+                return Regex.Replace((tekst + " " + reference).Trim(), @"\s+", " ");
+
+            var plat = Regex.Replace(tekst.Trim(), @"\r?\n", string.Empty);
+            var delen = plat.Split('/');
+            var velden = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            string tag = null;
+            var waarde = new List<string>();
+            void Bewaar() { if (tag != null && !velden.ContainsKey(tag)) velden[tag] = string.Join("/", waarde).Trim(); }
+            foreach (var d in delen.Skip(1))
+            {
+                if (Mt940Tags.Contains(d, StringComparer.OrdinalIgnoreCase) && (tag == null || waarde.Count > 0 || !string.Equals(tag, "CNTP", StringComparison.OrdinalIgnoreCase)))
+                {
+                    Bewaar();
+                    tag = d.ToUpperInvariant();
+                    waarde = new List<string>();
+                }
+                else waarde.Add(d);
+            }
+            Bewaar();
+
+            // ING: /CNTP/iban/bic/naam/plaats/
+            if (velden.TryGetValue("CNTP", out var cntp))
+            {
+                var c = cntp.Split('/');
+                if (c.Length > 0 && !velden.ContainsKey("IBAN") && c[0].Length > 0) velden["IBAN"] = c[0];
+                if (c.Length > 2 && !velden.ContainsKey("NAME") && c[2].Length > 0) velden["NAME"] = c[2];
+            }
+
+            string V(string k) => velden.TryGetValue(k, out var v) && !string.IsNullOrWhiteSpace(v) && !string.Equals(v.Trim(), "NOTPROVIDED", StringComparison.OrdinalIgnoreCase) ? Regex.Replace(v.Trim(), @"\s+", " ") : null;
+            var kenmerk = V("EREF");
+            var hoofd = string.Join(" - ", new[] { V("NAME"), V("REMI"), V("IBAN") }.Where(x => x != null));
+            var extra = string.Join(", ", new[] { V("TRTP") is string t ? t.ToLowerInvariant() : null, kenmerk != null && (V("REMI") == null || !V("REMI").Contains(kenmerk)) ? "kenmerk " + kenmerk : null }.Where(x => x != null));
+            var uit = (hoofd + (extra.Length > 0 ? " (" + extra + ")" : string.Empty)).Trim();
+            return uit.Length > 0 ? uit : Regex.Replace((tekst + " " + reference).Trim(), @"\s+", " ");
+        }
+
         public ParsedBankStatementLine[] ParseBankStatementLines(string fileName, byte[] buffer)
         {
+            fileName = FileNameByContent(fileName, buffer);
             var list = new List<ParsedBankStatementLine>();
             if (fileName.ToLowerInvariant().EndsWith(".qif"))
             {
@@ -767,7 +832,7 @@ namespace ManagerServer.HttpHandlers.Businesses.Business.BankAndCashAccounts
                         list.Add(new ParsedBankStatementLine()
                         {
                             Date = e2.ValueDate,
-                            Description = Regex.Replace((e2.Description + " " + e2.Reference).Trim(), @"\s+", " "),
+                            Description = Mt940Omschrijving(e2.Description, e2.Reference),
                             LineItems = new ParsedBankStatementLine.LineItem[] { new ParsedBankStatementLine.LineItem() { Amount = amount } }
                         });
                     }

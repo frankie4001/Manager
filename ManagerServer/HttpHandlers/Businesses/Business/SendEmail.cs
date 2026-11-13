@@ -44,7 +44,13 @@ namespace ManagerServer.HttpHandlers.Businesses.Business
 
             var to = (formData.To ?? string.Empty).Replace(',', ';').Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).ToArray();
             var subject = formData.Subject ?? string.Empty;
-            var body = Markdig.Markdown.ToHtml(formData.Body ?? string.Empty, pipeline);
+            // A body that is already HTML (e.g. an email template with a <table> layout) is sent as is.
+            // Converting it with Markdown would turn indented lines into code blocks.
+            var rawBody = formData.Body ?? string.Empty;
+            var body = rawBody.TrimStart().StartsWith("<")
+                ? rawBody
+                : Markdig.Markdown.ToHtml(rawBody, pipeline);
+            body = ApplyEmailLayout(body, subject);
 
             var pdf = Convert.FromBase64String(formData.PDF);
 
@@ -237,7 +243,9 @@ namespace ManagerServer.HttpHandlers.Businesses.Business
                 var builder = new BodyBuilder();
 
                 mailMessage.Subject = subject;
-                builder.HtmlBody = body;
+                Tuple<byte[], string> businessLogo = null;
+                try { businessLogo = ApplicationData.Businesses.GetImage(Business, businessDetails.Key); } catch { }
+                builder.HtmlBody = EmbedLocalImages(body, builder, businessLogo);
 
                 if (pdf != null)
                 {
@@ -354,6 +362,94 @@ namespace ManagerServer.HttpHandlers.Businesses.Business
 
             Response.Headers["HX-Redirect"] = Referrer;
             //Response.Redirect(Referrer);
+        }
+
+        // Optional house style for all emails: <data folder>/email/layout.html
+        // The layout must contain {{ content }} where the message text goes; {{ subject }} is also available.
+        // Images next to layout.html can be referenced by file name (e.g. <img src="logo.png">)
+        // and are embedded in the email, so they show without "load external images".
+        // <img src="business-logo"> embeds the logo set in the business details in Manager.
+        private static string GetEmailLayoutFolder()
+        {
+            return Path.Combine(DirectoryResolver.Resolve(), "email");
+        }
+
+        private static string ApplyEmailLayout(string body, string subject)
+        {
+            try
+            {
+                var path = Path.Combine(GetEmailLayoutFolder(), "layout.html");
+                if (!File.Exists(path)) return body;
+
+                var layout = File.ReadAllText(path);
+                if (!layout.Contains("{{ content }}") && !layout.Contains("{{content}}")) return body;
+
+                var encodedSubject = WebUtility.HtmlEncode(subject ?? string.Empty);
+                return layout
+                    .Replace("{{ subject }}", encodedSubject)
+                    .Replace("{{subject}}", encodedSubject)
+                    .Replace("{{ content }}", body)
+                    .Replace("{{content}}", body);
+            }
+            catch
+            {
+                return body;
+            }
+        }
+
+        private const string BusinessLogoImageName = "business-logo";
+
+        private static string EmbedLocalImages(string html, BodyBuilder builder, Tuple<byte[], string> businessLogo)
+        {
+            if (string.IsNullOrEmpty(html)) return html;
+
+            var folder = GetEmailLayoutFolder();
+
+            var contentIds = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            return System.Text.RegularExpressions.Regex.Replace(html, @"(<img\b[^>]*?\bsrc\s*=\s*)([""'])([^""']+)\2", m =>
+            {
+                var src = m.Groups[3].Value.Trim();
+
+                // Only plain file names from the email folder; never URLs or other paths.
+                if (src.Contains(':') || src.Contains('/') || src.Contains('\\') || src.StartsWith(".")) return m.Value;
+
+                var isBusinessLogo = string.Equals(src, BusinessLogoImageName, StringComparison.OrdinalIgnoreCase);
+                if (isBusinessLogo)
+                {
+                    if (businessLogo?.Item1 == null || businessLogo.Item1.Length == 0) return m.Value;
+                }
+                else
+                {
+                    if (!Directory.Exists(folder) || !File.Exists(Path.Combine(folder, src))) return m.Value;
+                }
+
+                try
+                {
+                    if (!contentIds.TryGetValue(src, out var contentId))
+                    {
+                        MimeEntity resource;
+                        if (isBusinessLogo)
+                        {
+                            var contentType = ContentType.Parse(string.IsNullOrWhiteSpace(businessLogo.Item2) ? "image/png" : businessLogo.Item2);
+                            var extension = contentType.MediaSubtype?.ToLowerInvariant() == "jpeg" ? "jpg" : (contentType.MediaSubtype ?? "png").ToLowerInvariant();
+                            resource = builder.LinkedResources.Add("logo." + extension, businessLogo.Item1, contentType);
+                        }
+                        else
+                        {
+                            resource = builder.LinkedResources.Add(Path.Combine(folder, src));
+                        }
+                        contentId = MimeKit.Utils.MimeUtils.GenerateMessageId();
+                        resource.ContentId = contentId;
+                        contentIds[src] = contentId;
+                    }
+                    return m.Groups[1].Value + m.Groups[2].Value + "cid:" + contentId + m.Groups[2].Value;
+                }
+                catch
+                {
+                    return m.Value;
+                }
+            }, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         }
 
         public sealed class JsonResponse

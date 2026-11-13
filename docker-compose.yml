@@ -1,0 +1,22 @@
+# Manager Server met eigen aanpassingen.
+#
+# Starten:   docker compose up -d
+# Bijwerken: docker compose pull && docker compose up -d
+#
+# Standaard wordt het kant-en-klare image van GitHub gebruikt. Een ander image (bijv. een privé-versie)
+# kies je met een bestand ".env" naast dit bestand, met daarin:
+#   MANAGER_IMAGE=ghcr.io/<eigenaar>/<repository>:latest
+# Wil je zelf bouwen uit deze broncode, haal dan het hekje weg voor "build: ." en zet er een voor "image:".
+services:
+  manager:
+    image: ${MANAGER_IMAGE:-ghcr.io/frankie4001/manager:latest}
+    # build: .
+    container_name: manager
+    restart: unless-stopped
+    shm_size: "1gb"          # Chrome (PDF's) heeft gedeeld geheugen nodig
+    ports:
+      - "8085:8080"          # Manager is bereikbaar op http://<server>:8085
+    volumes:
+      - ./data:/data         # alle administraties, sjablonen en instellingen; neem deze map mee in je back-up
+    environment:
+      - TZ=Europe/Amsterdam

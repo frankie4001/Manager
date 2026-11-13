@@ -61,6 +61,15 @@ namespace ManagerServer.HttpHandlers.Businesses.Business.SalesOrders
     {
         [ProtoMember(1)] public Guid? Customer;
 
+        // Knop naar "Verkooporders samenvoegen" (zie OrdersSamenvoegen.cs)
+        protected override void OnHeaderStartSection(Context context)
+        {
+            base.OnHeaderStartSection(context);
+            using (A(@class: "btn", href: new OrdersSamenvoegen() { Business = Business, Referrer = this.ToUrl() }.ToUrl())) Write("Samenvoegen");
+            using (A(@class: "btn", href: new BestelnummerOntbreekt() { Business = Business, Referrer = this.ToUrl() }.ToUrl())) Write("Bestelnummer ontbreekt");
+            using (A(@class: "btn", href: new Contactpersonen() { Business = Business, Referrer = this.ToUrl() }.ToUrl())) Write("Contactpersonen");
+        }
+
         protected override SalesOrder[] OnGetRows(SalesOrder[] rows)
         {
             if (Customer.HasValue) rows = rows.Where(x => x.Customer == Customer).ToArray();
@@ -193,6 +202,50 @@ namespace ManagerServer.HttpHandlers.Businesses.Business.SalesOrders
         {
             var balances = GetInvoiced(rows);
             return rows.Select(x => balances[x].InvoiceAmount).ToArray();
+        }
+
+        // Eigen aanpassing: kosten en winst per order (zie OrderCalculatie.cs)
+        private Dictionary<SalesOrder, decimal> kosten = null;
+        private Dictionary<SalesOrder, decimal> GetKostenPerOrder(SalesOrder[] rows)
+        {
+            kosten ??= OrderCalculatie.CostsPerOrder(ApplicationData.Businesses.Get(Business), rows);
+            return kosten;
+        }
+
+        [Right, Sum]
+        [Guid("6f0b3a52-6c1e-4b8e-9d55-2f7c1a9e0b11")]
+        [Guide("De kolom *Kosten* toont de inkoopkosten van de order (inkoopfacturen met deze order in het veld Verkooporder) plus de extra kosten uit de calculatie, inclusief samengevoegde orders. Excl. btw.")]
+        public Tuple<decimal, Currency>[] GetKosten(SalesOrder[] rows)
+        {
+            var k = GetKostenPerOrder(rows);
+            return rows.Select(x => new Tuple<decimal, Currency>(k.TryGetValue(x, out var v) ? v : 0m, null)).ToArray();
+        }
+
+        [Right, Sum]
+        [Guid("0c7f2e94-3d1a-4f6b-8a27-5e9d4b1c6a22")]
+        [Guide("De kolom *Winst* is het orderbedrag excl. btw min de kosten.")]
+        public Tuple<decimal, Currency>[] GetWinst(SalesOrder[] rows)
+        {
+            var k = GetKostenPerOrder(rows);
+            var database = ApplicationData.Businesses.Get(Business);
+            return rows.Select(x => new Tuple<decimal, Currency>(x.Cancelled ? 0m : OrderCalculatie.OrderAmountExclTax(database, x) - (k.TryGetValue(x, out var v) ? v : 0m), null)).ToArray();
+        }
+
+        [Right]
+        [Name("Winst % op kosten")]
+        [Guid("9a4d1c37-2b8e-4e05-b6f3-7c1e8d2a5b33")]
+        [Guide("De kolom *Winst % op kosten* is de winst gedeeld door de kosten (de opslag).")]
+        public string[] GetWinstPercentage(SalesOrder[] rows)
+        {
+            var k = GetKostenPerOrder(rows);
+            var database = ApplicationData.Businesses.Get(Business);
+            return rows.Select(x =>
+            {
+                var cost = k.TryGetValue(x, out var v) ? v : 0m;
+                if (x.Cancelled || cost == 0m) return string.Empty;
+                var profit = OrderCalculatie.OrderAmountExclTax(database, x) - cost;
+                return (profit / cost * 100m).ToString("0.0") + "%";
+            }).ToArray();
         }
 
         [Center]

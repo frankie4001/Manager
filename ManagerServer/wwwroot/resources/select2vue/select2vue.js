@@ -78,6 +78,17 @@ Vue.component("input-decimal", {
             this.$el.placeholder = this.placeholder;
         }
         this.$el.style.minWidth = this.minWidth;
+        // Numeric keypad decimal key: insert the business's decimal separator
+        // (e.g. ',' for Dutch number format) instead of the character the
+        // keyboard layout produces, like Excel and banking sites do.
+        $(this.$el).on('keydown', function (e) {
+            var ev = e.originalEvent || e;
+            if (ev.code === 'NumpadDecimal' && vm.decimalSeparator && ev.key !== vm.decimalSeparator) {
+                e.preventDefault();
+                this.setRangeText(vm.decimalSeparator, this.selectionStart, this.selectionEnd, 'end');
+                this.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
         $(this.$el).on('input', function () {
             var text = $(this).val() || '';
             text = text.replaceAll(vm.groupSeparator, '');
@@ -197,3 +208,46 @@ if (!Number.prototype.getDecimals) {
 String.prototype.replaceAll = function (target, replacement) {
     return this.split(target).join(replacement);
 };
+
+// Collapsible "Options" block on forms (see NakedVueForm.cs).
+// Remembers per form type whether the block was left open or closed.
+(function () {
+    if (window.managerOptionsCollapseInit) return; // script may be loaded more than once
+    window.managerOptionsCollapseInit = true;
+
+    function storageKey(details) {
+        return 'manager.options-open.' + details.getAttribute('data-options-key');
+    }
+
+    function restore(root) {
+        if (!root || !root.querySelectorAll) return;
+        var list = Array.prototype.slice.call(root.querySelectorAll('details[data-options-key]'));
+        if (root.matches && root.matches('details[data-options-key]')) list.push(root);
+        list.forEach(function (details) {
+            if (details.hasAttribute('data-options-restored')) return;
+            details.setAttribute('data-options-restored', '');
+            try {
+                var value = localStorage.getItem(storageKey(details));
+                if (value === '1') details.open = true;
+                if (value === '0') details.open = false;
+            } catch (e) { }
+        });
+    }
+
+    // 'toggle' does not bubble, so listen in the capture phase.
+    document.addEventListener('toggle', function (e) {
+        var details = e.target;
+        if (!details || !details.matches || !details.matches('details[data-options-key]')) return;
+        if (!details.hasAttribute('data-options-restored')) return;
+        try { localStorage.setItem(storageKey(details), details.open ? '1' : '0'); } catch (e2) { }
+    }, true);
+
+    // Forms are rendered by Vue and htmx after page load, so watch for new blocks.
+    new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+            m.addedNodes.forEach(function (node) { if (node.nodeType === 1) restore(node); });
+        });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+
+    restore(document);
+})();

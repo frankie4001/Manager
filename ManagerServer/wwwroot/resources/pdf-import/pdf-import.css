@@ -1,0 +1,111 @@
+/* PDF-inkoopfactuur inlezen (Eigen aanpassing) */
+.pi, .pi-overlay {
+  --pi-rand: #d4d4d4;
+  --pi-zacht: #737373;
+  --pi-blauw: #2563eb;
+  --pi-groen: #15803d;
+  --pi-groen-bg: #f0fdf4;
+  --pi-rood: #b91c1c;
+  --pi-rood-bg: #fef2f2;
+  --pi-geel: #a16207;
+  --pi-geel-bg: #fefce8;
+  font-size: 0.875rem;
+}
+.pi { border: 1px dashed var(--pi-rand); border-radius: 0.75rem; background: #fff; margin-bottom: 1rem; }
+.pi.pi-sleep { border-color: var(--pi-blauw); background: #eff6ff; }
+.pi-balk { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; flex-wrap: wrap; }
+.pi-hint, .pi-zacht { color: var(--pi-zacht); }
+.pi-status { color: var(--pi-zacht); font-style: italic; }
+.pi-ruimte { flex: 1; }
+.pi-inhoud { border-top: 1px solid var(--pi-rand); padding: 1rem; }
+.pi-knop {
+  border: 1px solid var(--pi-rand); border-radius: 0.5rem; padding: 0.375rem 0.875rem;
+  background: #fff; cursor: pointer; font-weight: 500; white-space: nowrap;
+}
+.pi-knop:hover { background: #f5f5f5; }
+.pi-primair { background: var(--pi-blauw); border-color: var(--pi-blauw); color: #fff; }
+.pi-primair:hover { background: #1d4ed8; }
+.pi-gevaar { color: var(--pi-rood); border-color: #fca5a5; }
+.pi-link { background: none; border: 0; padding: 0; color: var(--pi-blauw); cursor: pointer; }
+.pi-link:hover { text-decoration: underline; }
+.pi-meldingen { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 0.75rem; }
+.pi-melding { border-radius: 0.5rem; padding: 0.5rem 0.75rem; border: 1px solid transparent; }
+.pi-ok { background: var(--pi-groen-bg); border-color: #bbf7d0; color: var(--pi-groen); }
+.pi-info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.pi-waarschuwing { background: var(--pi-geel-bg); border-color: #fde68a; color: var(--pi-geel); }
+.pi-fout { background: var(--pi-rood-bg); border-color: #fecaca; color: var(--pi-rood); }
+.pi-tekst-ok { color: var(--pi-groen); }
+.pi-tekst-let { color: var(--pi-geel); }
+.pi-tekst-fout { color: var(--pi-rood); }
+.pi-tekst-zacht { color: var(--pi-zacht); }
+.pi-klein { font-size: 0.8125rem; }
+.pi-raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem 1rem; margin-bottom: 1rem; }
+.pi-veld { display: flex; flex-direction: column; gap: 0.25rem; }
+.pi-label { font-weight: 600; font-size: 0.8125rem; }
+.pi-invoer {
+  border: 1px solid var(--pi-rand); border-radius: 0.375rem; padding: 0.3rem 0.5rem;
+  font: inherit; background: #fff; min-width: 0; max-width: 100%;
+}
+.pi-breed { width: 100%; min-width: 14rem; }
+.pi-smal { max-width: 14rem; }
+.pi-tabelvak { overflow-x: auto; }
+.pi-tabel { border-collapse: collapse; width: 100%; }
+.pi-tabel th { text-align: left; font-weight: 600; border-bottom: 1px solid var(--pi-rand); padding: 0.375rem 0.5rem; white-space: nowrap; }
+.pi-tabel td { border-bottom: 1px solid #f0f0f0; padding: 0.25rem 0.5rem; vertical-align: middle; }
+.pi-tabel .pi-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pi-correctie td { color: var(--pi-zacht); font-style: italic; }
+.pi-goed td, .pi-controle.pi-goed { background: var(--pi-groen-bg); color: var(--pi-groen); font-weight: 600; }
+.pi-fout-rij td, .pi-controle.pi-fout-rij { background: var(--pi-rood-bg); color: var(--pi-rood); font-weight: 600; }
+.pi-acties { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; }
+.pi-tekstblok { width: 100%; margin-top: 0.5rem; }
+.pi-tekstblok summary { cursor: pointer; color: var(--pi-zacht); }
+.pi-tekstblok pre { max-height: 20rem; overflow: auto; background: #fafafa; border: 1px solid var(--pi-rand); border-radius: 0.5rem; padding: 0.5rem; font-size: 0.75rem; white-space: pre-wrap; }
+
+/* Dialogen */
+.pi-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); z-index: 1000; display: flex; align-items: stretch; justify-content: center; padding: 1.5rem; font-size: 0.875rem; }
+.pi-dialoog { background: #fff; border-radius: 0.75rem; width: 100%; max-width: 110rem; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25); }
+.pi-dialoog-klein { max-width: 50rem; height: fit-content; max-height: 100%; }
+.pi-dialoog-kop { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-bottom: 1px solid #e5e5e5; flex-wrap: wrap; }
+.pi-dialoog-inhoud { padding: 1rem; overflow: auto; }
+.pi-maker { display: flex; flex: 1; min-height: 0; }
+.pi-lijnen { flex: 1 1 55%; overflow: auto; padding: 0.5rem 1rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.75rem; border-right: 1px solid #e5e5e5; }
+.pi-zijkant { flex: 1 1 45%; overflow: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; max-width: 40rem; }
+.pi-pagina { margin: 0.75rem 0 0.25rem; color: var(--pi-zacht); font-family: system-ui, sans-serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e5e5e5; }
+.pi-l { padding: 0.1rem 0.4rem; border-radius: 0.25rem; cursor: pointer; white-space: pre-wrap; border-left: 3px solid transparent; }
+.pi-l:hover { background: #eef2ff; }
+.pi-l-buiten { color: #525252; }
+.pi-l-kop { background: #dbeafe; border-left-color: var(--pi-blauw); font-weight: 600; }
+.pi-l-rij { background: var(--pi-groen-bg); border-left-color: #22c55e; color: #14532d; }
+.pi-l-vervolg { background: #f7fee7; border-left-color: #bef264; color: #3f6212; }
+.pi-l-negeer { color: #a3a3a3; text-decoration: line-through; }
+.pi-l-pagina { color: #a3a3a3; background: #fafafa; font-style: italic; }
+.pi-l-eind { background: #fee2e2; border-left-color: #ef4444; }
+.pi-l-voorbeeld { outline: 2px solid var(--pi-blauw); }
+.pi-legenda { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.pi-legenda .pi-l { cursor: default; font-size: 0.7rem; }
+.pi-stappen { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.pi-stap { border: 1px solid var(--pi-rand); border-radius: 999px; padding: 0.25rem 0.75rem; background: #fff; cursor: pointer; font-size: 0.8125rem; }
+.pi-stap.pi-actief { background: var(--pi-blauw); border-color: var(--pi-blauw); color: #fff; }
+.pi-uitleg { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 0.5rem; padding: 0.5rem 0.75rem; }
+.pi-blok { border: 1px solid #e5e5e5; border-radius: 0.5rem; padding: 0.625rem 0.75rem; display: flex; flex-direction: column; gap: 0.375rem; }
+.pi-blokkop { font-weight: 700; }
+.pi-tokens { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.pi-token { border: 1px solid var(--pi-rand); border-radius: 0.375rem; padding: 0.25rem; display: flex; flex-direction: column; gap: 0.25rem; align-items: stretch; }
+.pi-token-tekst { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.75rem; text-align: center; padding: 0 0.25rem; }
+.pi-token-keuze { font-size: 0.75rem; padding: 0.1rem 0.25rem; }
+.pi-token-omschrijving { background: #f7fee7; }
+.pi-token-aantal, .pi-token-prijs, .pi-token-bedrag { background: var(--pi-groen-bg); border-color: #86efac; }
+.pi-token-eenheid { background: #f5f3ff; }
+.pi-token-negeren { background: #fafafa; color: #a3a3a3; }
+.pi-chips { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; }
+.pi-chip { background: #f5f5f5; border: 1px solid var(--pi-rand); border-radius: 999px; padding: 0 0.25rem 0 0.5rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.75rem; }
+.pi-chip-weg { border: 0; background: none; cursor: pointer; color: var(--pi-rood); padding: 0 0.25rem; }
+.pi-check { display: flex; align-items: center; gap: 0.25rem; }
+.pi-controle { border-radius: 0.5rem; padding: 0.5rem 0.75rem; }
+.pi-voorbeeldvak { max-height: 16rem; overflow: auto; border: 1px solid #e5e5e5; border-radius: 0.375rem; }
+@media (max-width: 900px) {
+  .pi-overlay { padding: 0; }
+  .pi-maker { flex-direction: column; overflow: auto; }
+  .pi-lijnen { max-height: 45vh; border-right: 0; border-bottom: 1px solid #e5e5e5; }
+  .pi-zijkant { max-width: none; overflow: visible; }
+}
